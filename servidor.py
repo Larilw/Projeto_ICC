@@ -1,6 +1,7 @@
 from flask import Flask
 from flask_socketio import SocketIO
 
+
 GPIO_imported = False
 try:
     import RPi.GPIO as GPIO
@@ -23,18 +24,26 @@ if(GPIO_imported):
 
 
 server = Flask(__name__)
-socket = SocketIO(server)
+socket = SocketIO(server, cors_allowed_origins="*")
 
 
 @socket.on("connect")
 def on_connection():
     print("conectou")
 
+@socket.on("disconnect")
+def on_disconnection():
+    print("desconectou")
+
+@socket.on("bomba")
+def on_bomba():
+    print("bomba")
+
 @socket.on("controle")
 def on_controle(data):
     print(data)
-    if(data[0] == 0):
-        if(data[1] == 1):
+    if(data["x"] == 0):
+        if(data["y"] == 1):
             print("frente")
             print(GPIO_imported)
             if(GPIO_imported):            
@@ -42,7 +51,7 @@ def on_controle(data):
                 GPIO.output(tras_1, GPIO.LOW)
                 GPIO.output(frente_2, GPIO.HIGH)
                 GPIO.output(tras_2, GPIO.LOW)
-        elif(data[1] == -1):
+        elif(data["y"] == -1):
             print("tras")
             if(GPIO_imported):
                 GPIO.output(frente_1, GPIO.LOW)
@@ -50,8 +59,8 @@ def on_controle(data):
                 GPIO.output(frente_2, GPIO.LOW)
                 GPIO.output(tras_2, GPIO.HIGH)
 
-    elif(data[1] == 0):
-        if(data[0] == 1):
+    elif(data["y"] == 0):
+        if(data["x"] == 1):
             print("direita")
             if(GPIO_imported):
                 GPIO.output(frente_1, GPIO.HIGH)
@@ -59,7 +68,7 @@ def on_controle(data):
                 GPIO.output(frente_2, GPIO.LOW)
                 GPIO.output(tras_2, GPIO.HIGH)
 
-        elif(data[0] == -1):
+        elif(data["x"] == -1):
             print("esquerda")
             if(GPIO_imported):
                 GPIO.output(frente_1, GPIO.LOW)

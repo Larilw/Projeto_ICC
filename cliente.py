@@ -1,7 +1,7 @@
 import socketio 
 
 client = socketio.Client()
-client.connect("http://192.168.1.2:3000")
+client.connect("http://192.168.1.16:3000")
 
 aux = True
 while(aux):
