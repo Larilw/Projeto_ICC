@@ -1,3 +1,4 @@
+from inspect import getcallargs
 from flask import Flask
 from flask_socketio import SocketIO
 
@@ -26,6 +27,53 @@ if(GPIO_imported):
 server = Flask(__name__)
 socket = SocketIO(server, cors_allowed_origins="*")
 
+def get_comando(data):
+    if((data["x"] >= 50 or data["x"] <= -50) or (data["y"] >= 50 or data["y"] <= -50)):
+        if(data["x"] > 0):
+            return "direita"
+        elif(data["x"] < 0):
+            return "esquerda"
+        elif(data["y"] > 0):
+            return "frente"
+        elif(data["y"] < 0):
+            return "tras"
+        else:
+            return "parar"
+
+def go_direita():
+    if(GPIO_imported):
+        GPIO.output(frente_1, GPIO.HIGH)
+        GPIO.output(tras_1, GPIO.LOW)
+        GPIO.output(frente_2, GPIO.LOW)
+        GPIO.output(tras_2, GPIO.HIGH)
+
+def go_frente():
+    if(GPIO_imported):            
+        GPIO.output(frente_1, GPIO.HIGH)
+        GPIO.output(tras_1, GPIO.LOW)
+        GPIO.output(frente_2, GPIO.HIGH)
+        GPIO.output(tras_2, GPIO.LOW)
+
+def go_tras():
+    if(GPIO_imported):
+        GPIO.output(frente_1, GPIO.LOW)
+        GPIO.output(tras_1, GPIO.HIGH)
+        GPIO.output(frente_2, GPIO.LOW)
+        GPIO.output(tras_2, GPIO.HIGH)
+
+def go_esquerda():
+    if(GPIO_imported):
+        GPIO.output(frente_1, GPIO.LOW)
+        GPIO.output(tras_1, GPIO.HIGH)
+        GPIO.output(frente_2, GPIO.HIGH)
+        GPIO.output(tras_2, GPIO.LOW)
+
+def parar():
+    if(GPIO_imported):
+        GPIO.output(frente_1, GPIO.LOW)
+        GPIO.output(tras_1, GPIO.LOW)
+        GPIO.output(frente_2, GPIO.LOW)
+        GPIO.output(tras_2, GPIO.LOW)
 
 @socket.on("connect")
 def on_connection():
@@ -35,46 +83,52 @@ def on_connection():
 def on_disconnection():
     print("desconectou")
 
-@socket.on("bomba")
-def on_bomba():
-    print("bomba")
+@socket.on("ligarBomba")
+def on_bomba_on():
+    print("bomba ligada")
+
+@socket.on("desligarBomba")
+def on_bomba_on():
+    print("bomba desligada")
 
 @socket.on("controle")
 def on_controle(data):
     print(data)
-    if(data["x"] == 0):
-        if(data["y"] == 1):
-            print("frente")
-            print(GPIO_imported)
-            if(GPIO_imported):            
-                GPIO.output(frente_1, GPIO.HIGH)
-                GPIO.output(tras_1, GPIO.LOW)
-                GPIO.output(frente_2, GPIO.HIGH)
-                GPIO.output(tras_2, GPIO.LOW)
-        elif(data["y"] == -1):
-            print("tras")
-            if(GPIO_imported):
-                GPIO.output(frente_1, GPIO.LOW)
-                GPIO.output(tras_1, GPIO.HIGH)
-                GPIO.output(frente_2, GPIO.LOW)
-                GPIO.output(tras_2, GPIO.HIGH)
+    if((data["x"] < 30 and data["x"] > -30) and (data["y"] < 30 and data["y"] > -30)):
+        print("parar")
+        parar()
+    
+    else:
+        if(data["x"] > 0):
+            if(data["x"] > 50):
+                print("dir")
+                go_direita()
+                
+            else:
+                if(data["y"] > 50):
+                    print("frente")
+                    go_frente()
+                    
+                elif(data["y"] < -50):
+                    print("tras")
+                    go_tras()
+                
 
-    elif(data["y"] == 0):
-        if(data["x"] == 1):
-            print("direita")
-            if(GPIO_imported):
-                GPIO.output(frente_1, GPIO.HIGH)
-                GPIO.output(tras_1, GPIO.LOW)
-                GPIO.output(frente_2, GPIO.LOW)
-                GPIO.output(tras_2, GPIO.HIGH)
+        else:
+            if(data["x"] < -50):
+                print("esquerda")
+                go_esquerda()
+        
+            else:
+                if(data["y"] > 50):
+                    print("frente")
+                    go_frente()
 
-        elif(data["x"] == -1):
-            print("esquerda")
-            if(GPIO_imported):
-                GPIO.output(frente_1, GPIO.LOW)
-                GPIO.output(tras_1, GPIO.HIGH)
-                GPIO.output(frente_2, GPIO.HIGH)
-                GPIO.output(tras_2, GPIO.LOW)
+
+                elif(data["y"] < -50):
+                    print("tras")
+                    go_tras()
+  
 
 if(__name__ == "__main__"):
     try:
