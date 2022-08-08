@@ -15,53 +15,45 @@ frente_2 = 16
 tras_1 = 15
 tras_2 = 18
 
+bomba_vcc = 38
+bomba_gnd = 40
+
 if(GPIO_imported):
     GPIO.setmode(GPIO.BOARD)
+    GPIO.setwarnings(False)
     GPIO.setup(frente_1, GPIO.OUT)
     GPIO.setup(tras_1, GPIO.OUT)
     GPIO.setup(frente_2, GPIO.OUT)
     GPIO.setup(tras_2, GPIO.OUT)
-    GPIO.setwarnings(False)
+    GPIO.setup(bomba_vcc, GPIO.IN)
+    GPIO.setup(bomba_gnd, GPIO.OUT)
 
 
 server = Flask(__name__)
 socket = SocketIO(server, cors_allowed_origins="*")
 
-def get_comando(data):
-    if((data["x"] >= 50 or data["x"] <= -50) or (data["y"] >= 50 or data["y"] <= -50)):
-        if(data["x"] > 0):
-            return "direita"
-        elif(data["x"] < 0):
-            return "esquerda"
-        elif(data["y"] > 0):
-            return "frente"
-        elif(data["y"] < 0):
-            return "tras"
-        else:
-            return "parar"
-
-def go_direita():
+def go_esquerda():
     if(GPIO_imported):
         GPIO.output(frente_1, GPIO.HIGH)
         GPIO.output(tras_1, GPIO.LOW)
         GPIO.output(frente_2, GPIO.LOW)
         GPIO.output(tras_2, GPIO.HIGH)
 
-def go_frente():
+def go_tras():
     if(GPIO_imported):            
         GPIO.output(frente_1, GPIO.HIGH)
         GPIO.output(tras_1, GPIO.LOW)
         GPIO.output(frente_2, GPIO.HIGH)
         GPIO.output(tras_2, GPIO.LOW)
 
-def go_tras():
+def go_frente():
     if(GPIO_imported):
         GPIO.output(frente_1, GPIO.LOW)
         GPIO.output(tras_1, GPIO.HIGH)
         GPIO.output(frente_2, GPIO.LOW)
         GPIO.output(tras_2, GPIO.HIGH)
 
-def go_esquerda():
+def go_direita():
     if(GPIO_imported):
         GPIO.output(frente_1, GPIO.LOW)
         GPIO.output(tras_1, GPIO.HIGH)
@@ -85,15 +77,18 @@ def on_disconnection():
 
 @socket.on("ligarBomba")
 def on_bomba_on():
-    print("bomba ligada")
+    if(GPIO_imported):
+        print("bomba ligada")
+        GPIO.setup(bomba_vcc, GPIO.IN)
 
 @socket.on("desligarBomba")
-def on_bomba_on():
-    print("bomba desligada")
+def on_bomba_off():
+    if(GPIO_imported):
+        print("bomba desligada")
+        GPIO.setup(bomba_vcc, GPIO.IN)
 
 @socket.on("controle")
 def on_controle(data):
-    print(data)
     if((data["x"] < 30 and data["x"] > -30) and (data["y"] < 30 and data["y"] > -30)):
         print("parar")
         parar()
@@ -132,6 +127,6 @@ def on_controle(data):
 
 if(__name__ == "__main__"):
     try:
-        socket.run(server, host="0.0.0.0", port=3000)
+        socket.run(server, host="192.168.4.1", port=3000)
     except Exception as e:
         print(str(e))
